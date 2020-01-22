@@ -2,7 +2,7 @@
 
 # TODO: Make a main Person class, then subclasses of Player and Dealer
 class Player():
-    def __init__(self,name,deck,maxHand=31):
+    def __init__(self,name,deck,maxHand=21):
         self.hand = 0
         self.cards = [ ]
         self.maxHand = maxHand
@@ -62,6 +62,7 @@ def play(pers,act):
     if (pers.hand > 21):
         print('{} busted with a hand of {} which is greater than 21'.format(pers.name,pers.hand))
         pers.bust = True
+        allPlayers.remove(pers)
 
 
 # Initialize Deck
@@ -70,8 +71,9 @@ print(deck.cards)
 
 # Initialize players, deal cards
 player1 = Player('Player1',deck)
+player2 = Player('Player2',deck)
 dealer = Player('Dealer',deck,17)
-players = [ player1 ]
+players = [ player1, player2 ]
 allPlayers = players + [ dealer ]
 
 for i in range(0,2):
@@ -85,23 +87,30 @@ for player in players:
     player.checkBlackjack()
 
     action = ''
-    while ((action != 'stand') and (player.hand <= 21) and (player.hand <= player1.maxHand)):
+    while ((action != 'stand') and (player.hand <= player1.maxHand)):
         action = input('"hit" or "stand": ')
         play(player,action)
 
 # Dealer moves
-# TODO: There has got to be a better way to abstract the while loops into another function like play!  Iterate over allPlayers, if busted then remove the player from the list, then check hand values.
-# TODO: There has GOT to be a better way to do this instead of if-else statements!
-if (player1.bust == True):
-    print('Player1 busted, Dealer wins with {}'.format(dealer.hand))
+dealer.calcHand()
+dealer.checkBlackjack()
+
+if ( len(allPlayers) == 1):
+    print('All players busted, Dealer wins with {}.'.format(dealer.hand))
+    exit()
 else:
+    # TODO: There has got to be a better way to abstract the while loops into another function like play!  
     action = ''
-    dealer.calcHand()
-    while ((dealer.hand <= 21) and (dealer.hand < dealer.maxHand)):
+    while (dealer.hand < dealer.maxHand):
         play(dealer,'hit')
-    if (dealer.bust == True):
-        print('Dealer busted, Player1 wins with {}'.format(player1.hand))
-    elif (player1.hand > dealer.hand):
-        print('Player1 hand is {} which beats the Dealer hand of {}'.format(player1.hand,dealer.hand))
-    else:
-        print('Dealer hand is {} which beats the Player1 hand of {}'.format(dealer.hand,player1.hand))
+
+# Get winner out of all players who haven't busted.
+winner = ''
+winning_hand = 0
+for player in allPlayers:
+    # This does not deal well with ties between Players
+    if ((player.hand > winning_hand) or ((player.hand == winning_hand) and (player.name == 'Dealer'))):
+        winner = player.name
+        winning_hand = player.hand
+
+print('{} is the winner with a hand of {}'.format(winner,winning_hand))
