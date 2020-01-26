@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-# TODO: Make a main Person class, then subclasses of Player and Dealer
 class Player():
     def __init__(self,name,deck,maxHand=21):
         self.hand = 0
@@ -33,9 +32,32 @@ class Player():
         if (quiet == False):
             print('{} has a hand of {} which totals {}.'.format(self.name,self.cards,self.hand))
 
+    def moves(self,deck):
+        action = ''
+        while ((action != 'stand') and (self.hand <= self.maxHand)):
+            action = input('"hit" or "stand": ')
+            self.play(action,deck)
+
+    def play(self,act,deck):
+        if (act == 'hit'):
+            self.hit(deck)
+        if (self.hand > 21):
+            print('{} busted with a hand of {} which is greater than 21'.format(self.name,self.hand))
+            self.bust = True
+
     # TODO: Version 2.0
     def checkBlackjack(self):
         pass
+
+
+class Dealer(Player):
+    def __init__(self,name,deck,maxHand=17):
+        Player.__init__(self,name,deck,maxHand)
+
+    def moves(self,deck):
+        while (self.hand <= self.maxHand):
+            self.play('hit',deck)
+
 
 ''' #################################### '''
 import random
@@ -56,14 +78,6 @@ class Deck():
 
 ''' #################################### '''
 
-def play(pers,act):
-    if (act == 'hit'):
-        pers.hit(deck)
-    if (pers.hand > 21):
-        print('{} busted with a hand of {} which is greater than 21'.format(pers.name,pers.hand))
-        pers.bust = True
-        allPlayers.remove(pers)
-
 
 # Initialize Deck
 deck = Deck()
@@ -72,45 +86,38 @@ print(deck.cards)
 # Initialize players, deal cards
 player1 = Player('Player1',deck)
 player2 = Player('Player2',deck)
-dealer = Player('Dealer',deck,17)
+dealer = Dealer('Dealer',deck,17)
 players = [ player1, player2 ]
 allPlayers = players + [ dealer ]
+validPlayers = [ ]
 
 for i in range(0,2):
     for player in allPlayers:
         player.deal(deck)
         player.calcHand(True)
 
-# Player moves
+# Player moves, then add player to validPlayers if didn't bust.
 for player in players:
     player.calcHand()
     player.checkBlackjack()
+    player.moves(deck)
+    if (player.bust == False):
+        validPlayers.append(player)
 
-    action = ''
-    while ((action != 'stand') and (player.hand <= player1.maxHand)):
-        action = input('"hit" or "stand": ')
-        play(player,action)
-
-# Dealer moves
+# Dealer moves if needed
 dealer.calcHand()
 dealer.checkBlackjack()
 
-if ( len(allPlayers) == 1):
+if ( len(validPlayers) == 0):
     print('All players busted, Dealer wins with {}.'.format(dealer.hand))
     exit()
 else:
-    # TODO: There has got to be a better way to abstract the while loops into another function like play!  
-    action = ''
-    while (dealer.hand < dealer.maxHand):
-        play(dealer,'hit')
+    dealer.moves(deck)
 
-# Get winner out of all players who haven't busted.
-winner = ''
-winning_hand = 0
-for player in allPlayers:
-    # This does not deal well with ties between Players
-    if ((player.hand > winning_hand) or ((player.hand == winning_hand) and (player.name == 'Dealer'))):
-        winner = player.name
-        winning_hand = player.hand
 
-print('{} is the winner with a hand of {}'.format(winner,winning_hand))
+# Get winners out of all players who haven't busted.
+for player in validPlayers:
+    if ((player.hand > dealer.hand) or (dealer.bust == True)):
+        print('{} beats the dealer with a hand of {}.'.format(player.name,player.hand))
+    else:
+       print('Dealer beats {} with a hand of {}.'.format(player.name,dealer.hand))
